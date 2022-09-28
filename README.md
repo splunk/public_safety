@@ -1,6 +1,6 @@
 # Splunk Public Safety
 
-Splunk Public Sector breaks down Public Safety into 4 major categories:
+Splunk Public Sector breaks down Public Safety into **5 major categories**:
 
 ## Crime Analytics
 - Intelligent Policing to Reduce Crime and Optimize Resource Allocation
