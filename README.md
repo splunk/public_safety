@@ -11,6 +11,7 @@ Splunk Public Sector breaks down Public Safety into **5 major categories**:
 ## Law Enforcement
 - Criminal Investigations
 - Search Digital Evidence Data
+- Campus/School Safety
 - Cross Correlation Searching between Persons of Interest, Cases, Data Artifacts
 - Financial Forensics, Crypto-Currency Transactions
 - Mission Analytics (Drones, Surveillance, Telephones, Vehicle Telematics)
