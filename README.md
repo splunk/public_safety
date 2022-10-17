@@ -1,5 +1,5 @@
 # Splunk Public Safety
-
+Public safety covers the difficult mission Stae and Local governments to obviate the dangers to the general public.
 Splunk Public Sector breaks down Public Safety into **5 major categories**:
 
 ## Crime Analytics
