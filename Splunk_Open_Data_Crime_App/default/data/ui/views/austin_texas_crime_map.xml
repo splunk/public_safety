@@ -1,0 +1,455 @@
+<form version="1.1" theme="dark">
+  <label>Austin Texas Crime Map</label>
+  <fieldset submitButton="true">
+    <input type="multiselect" token="zipcode" searchWhenChanged="false">
+      <label>Zip Code</label>
+      <choice value="*">All</choice>
+      <fieldForLabel>zipcode</fieldForLabel>
+      <fieldForValue>zipcode</fieldForValue>
+      <search>
+        <query>index=austin Latitude&gt;5 AND Longitude&lt;0 "Zip Code"&gt;0 
+| fillnull value=NONE 
+| search $category$ $offenseDescription$  $location$
+| dedup "Zip Code"
+| rename "Zip Code" as zipcode
+| table zipcode
+| sort zipcode</query>
+        <earliest>$time1.earliest$</earliest>
+        <latest>$time1.latest$</latest>
+      </search>
+      <initialValue>*</initialValue>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <valuePrefix>"Zip Code"="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="multiselect" token="category">
+      <label>Category</label>
+      <choice value="*">All</choice>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"Category Description"="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+      <fieldForLabel>category</fieldForLabel>
+      <fieldForValue>category</fieldForValue>
+      <search>
+        <query>index=austin Latitude&gt;5 AND Longitude&lt;0  
+| fillnull value=NONE
+| search $zipcode$ $offenseDescription$  $location$
+| fillnull value=NONE
+| dedup "Category Description"
+| rename "Category Description" as category
+| table category
+| sort category</query>
+        <earliest>$time1.earliest$</earliest>
+        <latest>$time1.latest$</latest>
+      </search>
+    </input>
+    <input type="multiselect" token="offenseDescription" searchWhenChanged="false">
+      <label>Category Description</label>
+      <fieldForLabel>offenseDescription</fieldForLabel>
+      <fieldForValue>offenseDescription</fieldForValue>
+      <search>
+        <query>index=austin Latitude&gt;5 AND Longitude&lt;0  
+| fillnull value=NONE
+| search $zipcode$ $category$ $location$
+| fillnull value=NONE
+| dedup "Highest Offense Description"
+| rename "Highest Offense Description" as offenseDescription
+| table offenseDescription
+| sort offenseDescription</query>
+        <earliest>$time1.earliest$</earliest>
+        <latest>$time1.latest$</latest>
+      </search>
+      <choice value="*">All</choice>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"Highest Offense Description"="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+    </input>
+    <input type="multiselect" token="location">
+      <label>Location Type</label>
+      <choice value="*">All</choice>
+      <prefix>(</prefix>
+      <suffix>)</suffix>
+      <initialValue>*</initialValue>
+      <valuePrefix>"Location Type"="</valuePrefix>
+      <valueSuffix>"</valueSuffix>
+      <delimiter> OR </delimiter>
+      <fieldForLabel>location</fieldForLabel>
+      <fieldForValue>location</fieldForValue>
+      <search>
+        <query>index=austin Latitude&gt;5 AND Longitude&lt;0
+| fillnull value=NONE
+| search $zipcode$ $category$ $offenseDescription$
+| dedup "Location Type"
+| rename "Location Type" as location
+| table location
+| sort location</query>
+        <earliest>$time1.earliest$</earliest>
+        <latest>$time1.latest$</latest>
+      </search>
+    </input>
+    <input type="time" token="time1" searchWhenChanged="true">
+      <label>Time Machine</label>
+      <default>
+        <earliest>-1y@y</earliest>
+        <latest>@y</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Crime Map</title>
+      <viz type="leaflet_maps_app.maps-plus">
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| eval markerColor=case(
+like(offenseDescription, "%MURDER%"), "red", 
+like(offenseDescription, "%ASSAULT%"), "pink", 
+like(offenseDescription, "%BURG%"), "green", 
+like(offenseDescription, "%AGG%"), "orange", 
+like(offenseDescription, "%POSS%"), "darkred", 
+like(offenseDescription, "%THEFT%"), "gray",
+like(offenseDescription, "%PROSTITUTION%"), "black",
+like(offenseDescription, "%TERROR%"), "darkpurple"),
+
+icon=case(like(offenseDescription, "%MURDER%"), "exclamation-triangle", 
+like(offenseDescription, "%AGG%"), "battery-4", 
+like(offenseDescription, "%ASSAULT%"), "battery-3", 
+like(offenseDescription, "%TERROR%%"), "gavel", 
+like(offenseDescription, "%BURG%"), "building", 
+like(offenseDescription, "%THEFT%"), "shopping-cart", 
+like(offenseDescription, "%TO VEHICLE%"), "car", 
+1=1, "hand-lizard-o"),
+
+layerDescription=case(
+like(offenseDescription, "%MURDER%"), "Murder", 
+like(offenseDescription, "%AGG%"), "Aggrivated", 
+like(offenseDescription, "%ASSAULT%"), "Assault", 
+like(offenseDescription, "%TERROR%%"), "Terror", 
+like(offenseDescription, "%BURG%"), "Burlary", 
+like(offenseDescription, "%THEFT%"), "Theft", 
+like(offenseDescription, "%TO VEHICLE%"), "Vehicle", 
+1=1, "Other"),
+
+description="&lt;ul style='padding: 0;list-style: none;'&gt;
+&lt;li&gt;Date/Time of Incident: &lt;strong&gt;".occurred."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Date/Time of Report: &lt;strong&gt;".reported."&lt;/strong&gt;&lt;/li&gt;
+&lt;br/&gt;
+&lt;li&gt;&lt;strong&gt;Incident Information&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Crime Category: &lt;strong&gt;".Category."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Offense Description: &lt;strong&gt;".offenseDescription."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Family Violence: &lt;strong&gt;".famViolence."&lt;/strong&gt;&lt;/li&gt;
+&lt;br/&gt;
+&lt;li&gt;&lt;strong&gt;Location Information&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Location: &lt;strong&gt;".locDescr."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Street Address: &lt;strong&gt;".Address."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;ZIP Code: &lt;strong&gt;".zipCode."&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Long/Lat: &lt;strong&gt;".longitude." | ".latitude."&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;",
+tooltip = description, clusterGroup="default"
+| table latitude longitude description markerColor tooltip icon clusterGroup, layerDescription</query>
+          <earliest>$time1.earliest$</earliest>
+          <latest>$time1.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">851</option>
+        <option name="leaflet_maps_app.maps-plus.allPopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.animate">1</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoomDelay">500</option>
+        <option name="leaflet_maps_app.maps-plus.bingMaps">0</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsLabelLanguage">en-US</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsTileLayer">CanvasLight</option>
+        <option name="leaflet_maps_app.maps-plus.cluster">1</option>
+        <option name="leaflet_maps_app.maps-plus.contextMenu">1</option>
+        <option name="leaflet_maps_app.maps-plus.criticalThreshold">80</option>
+        <option name="leaflet_maps_app.maps-plus.defaultHeight">600</option>
+        <option name="leaflet_maps_app.maps-plus.disableClusteringAtZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldown">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldownAction">dblclick</option>
+        <option name="leaflet_maps_app.maps-plus.fullScreen">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesPosition">topleft</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesSearch">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesZoomLevel">12</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapBlur">15</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapColorGradient">{"0.4":"blue","0.6":"cyan","0.7":"lime","0.8":"yellow","1":"red"}</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapEnable">1</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapMinOpacity">1.0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapOnly">0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapRadius">8</option>
+        <option name="leaflet_maps_app.maps-plus.i18nLanguage">en</option>
+        <option name="leaflet_maps_app.maps-plus.layerControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.layerControlCollapsed">1</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLat">39.50</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLon">-98.35</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterZoom">6</option>
+        <option name="leaflet_maps_app.maps-plus.mapTile">http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png</option>
+        <option name="leaflet_maps_app.maps-plus.maxClusterRadius">80</option>
+        <option name="leaflet_maps_app.maps-plus.maxSpiderfySize">100</option>
+        <option name="leaflet_maps_app.maps-plus.maxZoom">19</option>
+        <option name="leaflet_maps_app.maps-plus.measureActiveColor">#00ff00</option>
+        <option name="leaflet_maps_app.maps-plus.measureCompletedColor">#0066ff</option>
+        <option name="leaflet_maps_app.maps-plus.measureIconPosition">topright</option>
+        <option name="leaflet_maps_app.maps-plus.measureLocalization">en</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryAreaUnit">acres</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryLengthUnit">feet</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryAreaUnit">sqmiles</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryLengthUnit">miles</option>
+        <option name="leaflet_maps_app.maps-plus.measureTool">1</option>
+        <option name="leaflet_maps_app.maps-plus.minZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.multiplePopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.pathColorList">#0003F0,#D43C29,darkgreen,0xe2d400,darkred,#23A378</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplitInterval">60</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplits">0</option>
+        <option name="leaflet_maps_app.maps-plus.permanentTooltip">0</option>
+        <option name="leaflet_maps_app.maps-plus.playbackSpeed">100</option>
+        <option name="leaflet_maps_app.maps-plus.playbackTickLength">50</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneBgColor">#B5E28C</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneFgColor">#6ECC39</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeBgColor">#FD9C73</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeFgColor">#F18017</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoBgColor">#F1D357</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoFgColor">#F0C20C</option>
+        <option name="leaflet_maps_app.maps-plus.refreshInterval">0</option>
+        <option name="leaflet_maps_app.maps-plus.renderer">svg</option>
+        <option name="leaflet_maps_app.maps-plus.scrollWheelZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPathLines">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlayback">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackDateControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackPlayControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackSliderControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showProgress">1</option>
+        <option name="leaflet_maps_app.maps-plus.singleMarkerMode">0</option>
+        <option name="leaflet_maps_app.maps-plus.spiderfyDistanceMultiplier">1</option>
+        <option name="leaflet_maps_app.maps-plus.splunkVersionCheck">1</option>
+        <option name="leaflet_maps_app.maps-plus.stickyTooltip">1</option>
+        <option name="leaflet_maps_app.maps-plus.warningThreshold">55</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Offense Description by Categories</title>
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| stats count by Category, offenseDescription
+| rename offenseDescription as "Offense Description"
+| sort -count</query>
+          <earliest>-1y@y</earliest>
+          <latest>@y</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Category">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#D41F1F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Locations by Crime Description</title>
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| stats count by locDescr, offenseDescription
+| rename offenseDescription as "Offense Description", locDescr as "Location Description"
+| sort -count</query>
+          <earliest>$time1.earliest$</earliest>
+          <latest>$time1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="totalsRow">true</option>
+        <format type="color" field="locDescr">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#D41F1F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="offenseDescription">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <chart>
+        <title>Top 10 Locations</title>
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| stats count by locDescr
+| sort -count 
+| head 10</query>
+          <earliest>$time1.earliest$</earliest>
+          <latest>$time1.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.drilldown">none</option>
+        <option name="height">407</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Crimes over Time</title>
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| timechart count by offenseDescription limit=0
+| sort -count</query>
+          <earliest>-1y@y</earliest>
+          <latest>@y</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Frequency of Crime(s)</title>
+        <search>
+          <query>index=austin Latitude&gt;5 AND Longitude&lt;0 
+| fillnull value=NONE
+| search  $zipcode$ $category$ $offenseDescription$  $location$
+| rename Latitude as latitude,
+Longitude as longitude,
+"Occurred Date Time" as occurred,
+"Report Date Time" as reported,
+"Category Description" as Category,
+"Family Violence" as famViolence,
+"Highest Offense Description" as offenseDescription,
+"Zip Code" as zipCode,
+"Location Type" as locDescr
+| stats count by date_month, date_wday, date_hour
+| rename date_month as "Month", date_wday as "Day of Week", date_hour as "Hour of Day (24H)"
+| sort -count</query>
+          <earliest>$time1.earliest$</earliest>
+          <latest>$time1.latest$</latest>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="totalsRow">true</option>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#D41F1F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+      </table>
+    </panel>
+  </row>
+</form>
