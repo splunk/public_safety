@@ -1,0 +1,560 @@
+<form version="1.1" theme="dark">
+  <label>Crime Analytics - Chicago PD</label>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="dropdown" token="arrest" searchWhenChanged="true">
+      <label>Arrest Conducted?</label>
+      <choice value="*">All</choice>
+      <choice value="true">Yes/True</choice>
+      <choice value="false">No/False</choice>
+      <fieldForLabel>Arrest</fieldForLabel>
+      <fieldForValue>Arrest</fieldForValue>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="dropdown" token="primaryType" searchWhenChanged="true">
+      <label>Primary Type</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <prefix>"</prefix>
+      <suffix>"</suffix>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Primary Type</fieldForLabel>
+      <fieldForValue>Primary Type</fieldForValue>
+      <search>
+        <query>index=chicago_crimes Description=$description$ OR Ward=$ward$  OR Beat=$beat$
+| dedup "Primary Type"
+| table "Primary Type"
+| sort "Primary Type"</query>
+        <earliest>$timeMachine.earliest$</earliest>
+        <latest>$timeMachine.latest$</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="description" searchWhenChanged="true">
+      <label>Type Description</label>
+      <choice value="*">All</choice>
+      <prefix>"</prefix>
+      <suffix>"</suffix>
+      <fieldForLabel>Description</fieldForLabel>
+      <fieldForValue>Description</fieldForValue>
+      <search>
+        <query>index=chicago_crimes "Primary Type"=$primaryType$  Ward=$ward$ Beat=$beat$
+| dedup "Description"
+| table "Description"
+| sort "Description"</query>
+        <earliest>$timeMachine.earliest$</earliest>
+        <latest>$timeMachine.latest$</latest>
+      </search>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="dropdown" token="ward">
+      <label>Ward</label>
+      <fieldForLabel>Ward</fieldForLabel>
+      <fieldForValue>Ward</fieldForValue>
+      <search>
+        <query>index=chicago_crimes "Primary Type"=$primaryType$ OR Description=$description$ OR Beat=$beat$
+| dedup "Ward"
+| table "Ward"
+| sort "Ward"</query>
+        <earliest>$timeMachine.earliest$</earliest>
+        <latest>$timeMachine.latest$</latest>
+      </search>
+      <choice value="*">All Wards</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="dropdown" token="beat">
+      <label>Beat</label>
+      <choice value="*">All</choice>
+      <default>*</default>
+      <prefix>"</prefix>
+      <suffix>"</suffix>
+      <initialValue>*</initialValue>
+      <fieldForLabel>Beat</fieldForLabel>
+      <fieldForValue>Beat</fieldForValue>
+      <search>
+        <query>index=chicago_crimes "Primary Type"=$primaryType$ OR Description=$description$ OR Ward=$ward$
+| dedup "Beat"
+| table "Beat"
+| sort "Beat"</query>
+        <earliest>$timeMachine.earliest$</earliest>
+        <latest>$timeMachine.latest$</latest>
+      </search>
+    </input>
+    <input type="time" token="timeMachine" searchWhenChanged="true">
+      <label>Time Picker</label>
+      <default>
+        <earliest>-1y@y</earliest>
+        <latest>@y</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <title>Crimes Reported</title>
+      <single>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats c as "# of Reported Crimes"</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="height">220</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051", "0x0877a6", "0xf8be34", "0xf1813f", "0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Arrest Ratio</title>
+      <chart>
+        <search>
+          <query>index=chicago_crimes "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats count by Arrest</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Reported Crimes Over Time</title>
+      <single>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| timechart span=1month c as "# of Reported Crimes"</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">trend</option>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="height">246</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">inverse</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="trendInterval">-1mon</option>
+        <option name="underLabel">Compared to Previous Interval</option>
+        <option name="unit">Reported Crimes</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">1</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Crime Map</title>
+      <viz type="leaflet_maps_app.maps-plus">
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$ Latitude&gt;0 OR Longitude&gt;0 
+| dedup "Case Number"
+| eval markerColor=case(like(Description, "%SIMPLE%"), "red", like(Description, "%DOMESTIC BATTERY%"), "pink", like(Description, "%500 AND UNDER%"), "green", like(Description, "%TO PROPERTY%"), "orange", like(Description, "%RETAIL THEFT%"), "darkred", like(Description, "%TO VEHICLE%"), "cadetblue", 1=1, "blue"),
+icon=case(like(Description, "%SIMPLE%"), "exclamation-triangle", like(Description, "%DOMESTIC BATTERY%"), "battery-2", like(Description, "%500 AND UNDER%"), "gavel", like(Description, "%TO PROPERTY%"), "building", like(Description, "%RETAIL THEFT%"), "shopping-cart", like(Description, "%TO VEHICLE%"), "car", 1=1, "hand-lizard-o"),
+layerDescription=case(like(Description, "%SIMPLE%"), "exclamation-triangle", like(Description, "%DOMESTIC BATTERY%"), "battery-2", like(Description, "%500 AND UNDER%"), "gavel", like(Description, "%TO PROPERTY%"), "building", like(Description, "%RETAIL THEFT%"), "shopping-cart", like(Description, "%TO VEHICLE%"), "car", 1=1, "hand-lizard-o")
+| rename "Primary Type" as PrimaryType, "Location Description" as LocationDescription
+| eval description = "&lt;b&gt;Incident Date:&lt;/b&gt;" +Date+"&lt;b&gt;&lt;br&gt;"+PrimaryType+"&lt;/b&gt;&lt;br&gt;"+Description+"&lt;br&gt;Arrest: " +Arrest+"&lt;br&gt;"+LocationDescription, tooltip=description, clusterGroup="default"
+| rename Latitude as latitude, Longitude as longitude
+| table latitude, longitude, description, tooltip, markerColor, icon, clusterGroup, layerDescription</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="leaflet_maps_app.maps-plus.allPopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.animate">1</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.autoFitAndZoomDelay">500</option>
+        <option name="leaflet_maps_app.maps-plus.bingMaps">0</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsLabelLanguage">en-US</option>
+        <option name="leaflet_maps_app.maps-plus.bingMapsTileLayer">CanvasLight</option>
+        <option name="leaflet_maps_app.maps-plus.cluster">1</option>
+        <option name="leaflet_maps_app.maps-plus.contextMenu">1</option>
+        <option name="leaflet_maps_app.maps-plus.criticalThreshold">80</option>
+        <option name="leaflet_maps_app.maps-plus.defaultHeight">600</option>
+        <option name="leaflet_maps_app.maps-plus.disableClusteringAtZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldown">0</option>
+        <option name="leaflet_maps_app.maps-plus.drilldownAction">dblclick</option>
+        <option name="leaflet_maps_app.maps-plus.fullScreen">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesPosition">topleft</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesSearch">0</option>
+        <option name="leaflet_maps_app.maps-plus.googlePlacesZoomLevel">12</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapBlur">15</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapColorGradient">{"0.4":"blue","0.6":"cyan","0.7":"lime","0.8":"yellow","1":"red"}</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapEnable">1</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapMinOpacity">1.0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapOnly">0</option>
+        <option name="leaflet_maps_app.maps-plus.heatmapRadius">10</option>
+        <option name="leaflet_maps_app.maps-plus.i18nLanguage">en</option>
+        <option name="leaflet_maps_app.maps-plus.layerControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.layerControlCollapsed">1</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLat">39.50</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterLon">-98.35</option>
+        <option name="leaflet_maps_app.maps-plus.mapCenterZoom">6</option>
+        <option name="leaflet_maps_app.maps-plus.mapTile">http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png</option>
+        <option name="leaflet_maps_app.maps-plus.maxClusterRadius">80</option>
+        <option name="leaflet_maps_app.maps-plus.maxSpiderfySize">300</option>
+        <option name="leaflet_maps_app.maps-plus.maxZoom">19</option>
+        <option name="leaflet_maps_app.maps-plus.measureActiveColor">#00ff00</option>
+        <option name="leaflet_maps_app.maps-plus.measureCompletedColor">#0066ff</option>
+        <option name="leaflet_maps_app.maps-plus.measureIconPosition">topright</option>
+        <option name="leaflet_maps_app.maps-plus.measureLocalization">en</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryAreaUnit">acres</option>
+        <option name="leaflet_maps_app.maps-plus.measurePrimaryLengthUnit">feet</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryAreaUnit">sqmiles</option>
+        <option name="leaflet_maps_app.maps-plus.measureSecondaryLengthUnit">miles</option>
+        <option name="leaflet_maps_app.maps-plus.measureTool">1</option>
+        <option name="leaflet_maps_app.maps-plus.minZoom">1</option>
+        <option name="leaflet_maps_app.maps-plus.multiplePopups">0</option>
+        <option name="leaflet_maps_app.maps-plus.pathColorList">#0003F0,#D43C29,darkgreen,0xe2d400,darkred,#23A378</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplitInterval">60</option>
+        <option name="leaflet_maps_app.maps-plus.pathSplits">0</option>
+        <option name="leaflet_maps_app.maps-plus.permanentTooltip">0</option>
+        <option name="leaflet_maps_app.maps-plus.playbackSpeed">100</option>
+        <option name="leaflet_maps_app.maps-plus.playbackTickLength">50</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneBgColor">#B5E28C</option>
+        <option name="leaflet_maps_app.maps-plus.rangeOneFgColor">#6ECC39</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeBgColor">#FD9C73</option>
+        <option name="leaflet_maps_app.maps-plus.rangeThreeFgColor">#F18017</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoBgColor">#F1D357</option>
+        <option name="leaflet_maps_app.maps-plus.rangeTwoFgColor">#F0C20C</option>
+        <option name="leaflet_maps_app.maps-plus.refreshInterval">0</option>
+        <option name="leaflet_maps_app.maps-plus.renderer">svg</option>
+        <option name="leaflet_maps_app.maps-plus.scrollWheelZoom">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPathLines">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlayback">0</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackDateControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackPlayControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showPlaybackSliderControl">1</option>
+        <option name="leaflet_maps_app.maps-plus.showProgress">1</option>
+        <option name="leaflet_maps_app.maps-plus.singleMarkerMode">0</option>
+        <option name="leaflet_maps_app.maps-plus.spiderfyDistanceMultiplier">1</option>
+        <option name="leaflet_maps_app.maps-plus.splunkVersionCheck">1</option>
+        <option name="leaflet_maps_app.maps-plus.stickyTooltip">1</option>
+        <option name="leaflet_maps_app.maps-plus.warningThreshold">55</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Ward w/ Most Crimes</title>
+      <table>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats count by Ward
+| sort -count</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+        </search>
+        <option name="count">15</option>
+        <option name="drilldown">none</option>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#D41F1F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Crime Statistics by Ward</title>
+      <table>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats count by Ward, Beat, "Primary Type", Description, Arrest
+| sort -count</query>
+          <earliest>-1y@y</earliest>
+          <latest>@y</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">15</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <format type="color" field="Ward">
+          <colorPalette type="minMidMax" maxColor="#602CA1" midColor="#FFFFFF" minColor="#277C52"></colorPalette>
+          <scale type="minMidMax" midType="percentile" midValue="50"></scale>
+        </format>
+        <format type="color" field="Beat">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Primary Type">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="count">
+          <colorPalette type="minMidMax" maxColor="#D41F1F" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Arrest">
+          <colorPalette type="map">{"false":#118832,"true":#9E2520}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Crime Breakdown by Type/Sub-Type</title>
+      <chart>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats c by "Primary Type", Description</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Arrest Ratio by Incident</title>
+      <chart>
+        <search>
+          <query>index=chicago_crimes "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats c by  Description, Arrest</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.axisTitleY2.visibility">collapsed</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">pie</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">1</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title># of Incidents by Type and Description</title>
+      <table>
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| stats c by "Primary Type", Description
+| sort -c
+| rename c as "# of Incidents"</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">true</option>
+        <format type="color" field="# of Incidents">
+          <colorPalette type="minMidMax" maxColor="#DC4E41" minColor="#FFFFFF"></colorPalette>
+          <scale type="minMidMax"></scale>
+        </format>
+        <format type="color" field="Primary Type">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+        <format type="color" field="Description">
+          <colorPalette type="sharedList"></colorPalette>
+          <scale type="sharedCategory"></scale>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Reported Crimes Over Time</title>
+      <chart>
+        <search>
+          <query>index=chicago_crimes  Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| timechart c as "# of Reported Crimes"</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">gaps</option>
+        <option name="charting.chart.showDataLabels">all</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="height">420</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Calendar Heat Map</title>
+      <viz type="calendar_heatmap_app.calendar_heatmap">
+        <search>
+          <query>index=chicago_crimes Arrest=$arrest$ "Primary Type"=$primaryType$ Description=$description$  Ward=$ward$
+| timechart span=1d c as "# of Reported Crimes"</query>
+          <earliest>$timeMachine.earliest$</earliest>
+          <latest>$timeMachine.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellPadding">2</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellSize">20</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.cellStyle">circle</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.legendType">uniform</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.maxColor">#dc4e41</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.minColor">#53a051</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.numOfBins">9</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.showLegend">1</option>
+        <option name="calendar_heatmap_app.calendar_heatmap.splitMonths">1</option>
+        <option name="drilldown">none</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </viz>
+    </panel>
+  </row>
+</form>
